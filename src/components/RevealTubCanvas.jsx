@@ -377,9 +377,9 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
           tub.position.x = -stepP * 0.8;
           tub.position.y = 0.8 - stepP * 0.3;
           tub.position.z = 0;
-          tub.rotation.z = -stepP * Math.PI * 0.75; // Corrected: tilt towards the bowl (negative Z)
+          tub.rotation.z = -stepP * Math.PI * 0.6; // Corrected: tilt towards the bowl (negative Z)
           tub.rotation.x = 0;
-          tub.rotation.y = stepP * Math.PI;
+          tub.rotation.y = -stepP * Math.PI * 0.25; // Corrected: rotate Y to expose open face towards camera
 
           // Animate Lid opening and flying off to the left/away
           lid.position.x = -stepP * 2.2;
@@ -391,6 +391,9 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
           // Make Bowl stationary
           bowl.position.set(0, -1.8, 0);
           food.scale.set(0.001, 0.001, 0.001); // invisible food
+
+          // Reset legumes group rotation while falling
+          legumesGroup.rotation.y = 0;
 
           // Pouring seeds animation
           tub.updateMatrix();
@@ -436,12 +439,16 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
           tub.position.x = -0.8 - stepP * 1.5;
           tub.position.y = 0.5 - stepP * 1.5;
           tub.position.z = -stepP * 1.0;
-          tub.rotation.z = -Math.PI * 0.75 + stepP * Math.PI * 0.75; // Corrected: tilt towards the bowl (negative Z)
-          tub.rotation.y = Math.PI;
+          tub.rotation.z = -Math.PI * 0.6 + stepP * Math.PI * 0.6; // stands upright
+          tub.rotation.y = -Math.PI * 0.25 + stepP * Math.PI * 0.25; // rotates back to 0
+          tub.rotation.x = 0;
 
           lid.position.x = -2.2 - stepP * 0.4;
           lid.position.y = 2.2 - stepP * 3.2; // Y = -1.0
           lid.position.z = -0.5;
+
+          // Sync legumes group rotation with the rotating bowl
+          legumesGroup.rotation.y = bowl.rotation.y;
 
           legumesRef.current.forEach((seed) => {
             seed.mesh.visible = true;
@@ -474,6 +481,9 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
           tub.position.set(-2.3, -1.0, -1.0);
           tub.rotation.set(0, Math.PI, 0);
           lid.position.set(-2.6, -1.7, -0.5);
+
+          // Sync legumes group rotation with the rotating bowl
+          legumesGroup.rotation.y = bowl.rotation.y;
 
           legumesRef.current.forEach((seed) => {
             seed.mesh.visible = true;
@@ -510,9 +520,9 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
         animId = requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
 
-        // Slow hover/bob animation for active elements
+        // Smooth rotation for the bowl and legumes
         if (bowlMesh) {
-          bowlMesh.rotation.y = time * 0.05;
+          bowlMesh.rotation.y = time * 0.2; // Increased speed for visibility
         }
 
         // Apply scroll-based & time-based layouts and particle updates
