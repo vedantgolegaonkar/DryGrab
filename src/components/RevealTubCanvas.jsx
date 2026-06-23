@@ -116,6 +116,13 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
     let handleResize;
 
     try {
+      // Check if WebGL is supported/enabled in the browser
+      const canvasCheck = document.createElement('canvas');
+      const gl = canvasCheck.getContext('webgl') || canvasCheck.getContext('experimental-webgl');
+      if (!gl) {
+        throw new Error('WebGL not supported or blocked by browser settings.');
+      }
+
       const width = containerRef.current.clientWidth || window.innerWidth;
       const height = containerRef.current.clientHeight || 500;
 
