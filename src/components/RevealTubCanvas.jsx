@@ -101,6 +101,13 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
     return canvas;
   };
 
+  const scrollProgressRef = useRef(0);
+
+  // Sync scroll progress prop to ref to avoid stale closure in animate loop
+  useEffect(() => {
+    scrollProgressRef.current = scrollProgress;
+  }, [scrollProgress]);
+
   // Initialize Three.js scene
   useEffect(() => {
     if (!containerRef.current) return;
@@ -251,7 +258,7 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
           ),
           randomBowlOffset: new THREE.Vector3(
             (Math.random() - 0.5) * 1.1,
-            0.15 + (Math.random() - 0.5) * 0.1, // landing depth inside bowl
+            0.42 + Math.random() * 0.15, // land on top of the bowl surface (Y >= -1.4)
             (Math.random() - 0.5) * 1.1
           )
         });
@@ -347,15 +354,162 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
       // Dynamic Animation Loop
       const clock = new THREE.Clock();
 
+      const updateScene = (p, time) => {
+        const tub = tubMeshRef.current;
+        const lid = lidMeshRef.current;
+        const bowl = bowlMeshRef.current;
+        const food = foodMeshRef.current;
+
+        if (!tub || !lid || !bowl || !food) return;
+
+        // Step 1: Pour (p from 0 to 0.35)
+        if (p < 0.35) {
+          const stepP = p / 0.35; // Normalized progress of step 1 (0 to 1)
+
+          // Animate Tub positions and tilting upside down
+          tub.position.x = -stepP * 0.8;
+          tub.position.y = 0.8 - stepP * 0.3;
+          tub.position.z = 0;
+          tub.rotation.z = -stepP * Math.PI * 0.75; // Corrected: tilt towards the bowl (negative Z)
+          tub.rotation.x = 0;
+          tub.rotation.y = stepP * Math.PI;
+
+          // Animate Lid opening and flying off to the left/away
+          lid.position.x = -stepP * 2.2;
+          lid.position.y = 1.7 + stepP * 0.5;
+          lid.position.z = -stepP * 0.5;
+          lid.rotation.x = stepP * 1.5;
+          lid.rotation.z = stepP * 2.0;
+
+          // Make Bowl stationary
+          bowl.position.set(0, -1.8, 0);
+          food.scale.set(0.001, 0.001, 0.001); // invisible food
+
+          // Pouring seeds animation
+          tub.updateMatrix();
+          tub.updateMatrixWorld(true);
+
+          legumesRef.current.forEach((seed) => {
+            if (p < seed.threshold) {
+              const slideP = p / seed.threshold;
+              const localY = THREE.MathUtils.lerp(seed.offset.y, 0.8, slideP);
+              
+              const localSeedPos = new THREE.Vector3(seed.offset.x, localY, seed.offset.z);
+              const worldPos = localSeedPos.applyMatrix4(tub.matrixWorld);
+              
+              seed.mesh.visible = true;
+              seed.mesh.position.copy(worldPos);
+              seed.mesh.rotation.copy(tub.rotation);
+              seed.mesh.scale.set(1.0, 1.0, 1.0);
+            } else {
+              seed.mesh.visible = true;
+              const fallT = Math.min(1, (p - seed.threshold) / (0.34 - seed.threshold));
+
+              const localMouthPos = new THREE.Vector3(seed.offset.x, 0.8, seed.offset.z);
+              const mouthWorld = localMouthPos.applyMatrix4(tub.matrixWorld);
+
+              seed.mesh.position.x = THREE.MathUtils.lerp(mouthWorld.x, bowl.position.x + seed.randomBowlOffset.x, fallT);
+              seed.mesh.position.y = THREE.MathUtils.lerp(mouthWorld.y, bowl.position.y + seed.randomBowlOffset.y, fallT);
+              seed.mesh.position.z = THREE.MathUtils.lerp(mouthWorld.z, bowl.position.z + seed.randomBowlOffset.z, fallT);
+
+              seed.mesh.rotation.x = fallT * 10;
+              seed.mesh.rotation.y = fallT * 5;
+              seed.mesh.rotation.z = fallT * 3;
+            }
+          });
+
+          // Turn off water and steam
+          waterParticlesRef.current.forEach(w => w.mesh.visible = false);
+          if (steamParticlesRef.current) steamParticlesRef.current.visible = false;
+        } 
+        // Step 2: Add Water (p from 0.35 to 0.70)
+        else if (p >= 0.35 && p < 0.70) {
+          const stepP = (p - 0.35) / 0.35; // Normalized progress of step 2 (0 to 1)
+
+          tub.position.x = -0.8 - stepP * 1.5;
+          tub.position.y = 0.5 - stepP * 1.5;
+          tub.position.z = -stepP * 1.0;
+          tub.rotation.z = -Math.PI * 0.75 + stepP * Math.PI * 0.75; // Corrected: tilt towards the bowl (negative Z)
+          tub.rotation.y = Math.PI;
+
+          lid.position.x = -2.2 - stepP * 0.4;
+          lid.position.y = 2.2 - stepP * 3.2; // Y = -1.0
+          lid.position.z = -0.5;
+
+          legumesRef.current.forEach((seed) => {
+            seed.mesh.visible = true;
+            seed.mesh.position.x = bowl.position.x + seed.randomBowlOffset.x;
+            seed.mesh.position.y = bowl.position.y + seed.randomBowlOffset.y;
+            seed.mesh.position.z = bowl.position.z + seed.randomBowlOffset.z;
+            const swellFactor = 1.0 + stepP * 0.45;
+            seed.mesh.scale.set(swellFactor, swellFactor, swellFactor);
+          });
+
+          food.scale.set(stepP * 1.0, 1.0, stepP * 1.0);
+
+          // Water flow
+          waterParticlesRef.current.forEach((w) => {
+            w.mesh.visible = true;
+            const waterP = (time * 1.8 + w.delay) % 1.0;
+            
+            w.mesh.position.y = THREE.MathUtils.lerp(2.5, bowl.position.y + 0.3, waterP);
+            w.mesh.position.x = bowl.position.x + Math.sin(time * 12 + w.wobbleOffset) * 0.12;
+            w.mesh.position.z = bowl.position.z + Math.cos(time * 12 + w.wobbleOffset) * 0.12;
+            
+            const scale = waterP > 0.85 ? (1.0 - waterP) * 6.0 : 1.0;
+            w.mesh.scale.set(scale, scale, scale);
+          });
+
+          if (steamParticlesRef.current) steamParticlesRef.current.visible = false;
+        }
+        // Step 3: Eat / Aroma (p from 0.70 to 1.0)
+        else {
+          tub.position.set(-2.3, -1.0, -1.0);
+          tub.rotation.set(0, Math.PI, 0);
+          lid.position.set(-2.6, -1.7, -0.5);
+
+          legumesRef.current.forEach((seed) => {
+            seed.mesh.visible = true;
+            seed.mesh.position.x = bowl.position.x + seed.randomBowlOffset.x;
+            seed.mesh.position.y = bowl.position.y + seed.randomBowlOffset.y;
+            seed.mesh.position.z = bowl.position.z + seed.randomBowlOffset.z;
+            seed.mesh.scale.set(1.45, 1.45, 1.45);
+          });
+
+          food.scale.set(1.0, 1.0, 1.0);
+
+          waterParticlesRef.current.forEach(w => w.mesh.visible = false);
+
+          if (steamParticlesRef.current) {
+            const steam = steamParticlesRef.current;
+            steam.visible = true;
+
+            const positions = steam.geometry.attributes.position.array;
+            const pCount = positions.length / 3;
+
+            for (let i = 0; i < pCount; i++) {
+              const particleP = (time * 0.45 + (i * 0.05)) % 1.0; // loops 0 to 1
+
+              positions[i * 3 + 1] = THREE.MathUtils.lerp(bowl.position.y + 0.3, 1.8, particleP);
+              positions[i * 3] = bowl.position.x + Math.sin(time + i * 0.8) * (0.1 + particleP * 0.6);
+              positions[i * 3 + 2] = bowl.position.z + Math.cos(time + i * 0.8) * (0.1 + particleP * 0.6);
+            }
+            steam.geometry.attributes.position.needsUpdate = true;
+          }
+        }
+      };
+
       const animate = () => {
         animId = requestAnimationFrame(animate);
-        const delta = clock.getDelta();
         const time = clock.getElapsedTime();
 
         // Slow hover/bob animation for active elements
         if (bowlMesh) {
           bowlMesh.rotation.y = time * 0.05;
         }
+
+        // Apply scroll-based & time-based layouts and particle updates
+        updateScene(scrollProgressRef.current, time);
 
         renderer.render(scene, camera);
       };
@@ -439,183 +593,7 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
     }
   }, [activeFlavor]);
 
-  // Update positioning/rotation and state details based on scroll progress
-  useEffect(() => {
-    const tub = tubMeshRef.current;
-    const lid = lidMeshRef.current;
-    const bowl = bowlMeshRef.current;
-    const food = foodMeshRef.current;
-
-    if (!tub || !lid || !bowl || !food) return;
-
-    const p = scrollProgress; // 0 to 1
-
-    // Step 1: Pour (p from 0 to 0.35)
-    if (p < 0.35) {
-      const stepP = p / 0.35; // Normalized progress of step 1 (0 to 1)
-
-      // Animate Tub positions and tilting upside down
-      // Tub Y goes from 0.8 to 0.5, X goes from 0 to -0.6, Tilts Z-axis towards the bowl
-      tub.position.x = -stepP * 0.8;
-      tub.position.y = 0.8 - stepP * 0.3;
-      tub.position.z = 0;
-      tub.rotation.z = stepP * Math.PI * 0.75; // tilts pointing down
-      tub.rotation.x = 0;
-      tub.rotation.y = stepP * Math.PI;
-
-      // Animate Lid opening and flying off to the left/away
-      lid.position.x = -stepP * 2.2;
-      lid.position.y = 1.7 + stepP * 0.5;
-      lid.position.z = -stepP * 0.5;
-      lid.rotation.x = stepP * 1.5;
-      lid.rotation.z = stepP * 2.0;
-
-      // Make Bowl stationary
-      bowl.position.set(0, -1.8, 0);
-      food.scale.set(0.001, 0.001, 0.001); // invisible food
-
-      // Pouring seeds animation
-      // Make sure the tub's world matrix is updated before converting local coordinates
-      tub.updateMatrix();
-      tub.updateMatrixWorld(true);
-
-      legumesRef.current.forEach((seed) => {
-        if (p < seed.threshold) {
-          // Slide towards mouth (local Y = 0.8) as scroll progress approaches seed.threshold
-          const slideP = p / seed.threshold;
-          const localY = THREE.MathUtils.lerp(seed.offset.y, 0.8, slideP);
-          
-          const localSeedPos = new THREE.Vector3(seed.offset.x, localY, seed.offset.z);
-          const worldPos = localSeedPos.applyMatrix4(tub.matrixWorld);
-          
-          seed.mesh.visible = true;
-          seed.mesh.position.copy(worldPos);
-          seed.mesh.rotation.copy(tub.rotation);
-          seed.mesh.scale.set(1.0, 1.0, 1.0);
-        } else {
-          // Falling down
-          seed.mesh.visible = true;
-          // Calculate fall time (0 to 1) from trigger threshold to step completion
-          const fallT = Math.min(1, (p - seed.threshold) / (0.34 - seed.threshold));
-
-          // Get the mouth world position at the current frame for this specific seed
-          const localMouthPos = new THREE.Vector3(seed.offset.x, 0.8, seed.offset.z);
-          const mouthWorld = localMouthPos.applyMatrix4(tub.matrixWorld);
-
-          // Interpolate coordinates from tub mouth to inside the bowl
-          seed.mesh.position.x = THREE.MathUtils.lerp(mouthWorld.x, bowl.position.x + seed.randomBowlOffset.x, fallT);
-          seed.mesh.position.y = THREE.MathUtils.lerp(mouthWorld.y, bowl.position.y + seed.randomBowlOffset.y, fallT);
-          seed.mesh.position.z = THREE.MathUtils.lerp(mouthWorld.z, bowl.position.z + seed.randomBowlOffset.z, fallT);
-
-          // Rotate seeds while falling
-          seed.mesh.rotation.x = fallT * 10;
-          seed.mesh.rotation.y = fallT * 5;
-          seed.mesh.rotation.z = fallT * 3;
-        }
-      });
-
-      // Turn off water and steam
-      waterParticlesRef.current.forEach(w => w.mesh.visible = false);
-      if (steamParticlesRef.current) steamParticlesRef.current.visible = false;
-    } 
-    // Step 2: Add Water (p from 0.35 to 0.70)
-    else if (p >= 0.35 && p < 0.70) {
-      const stepP = (p - 0.35) / 0.35; // Normalized progress of step 2 (0 to 1)
-
-      // Move empty Tub completely out of the way on the left side
-      tub.position.x = -0.8 - stepP * 1.5;
-      tub.position.y = 0.5 - stepP * 1.5;
-      tub.position.z = -stepP * 1.0;
-      tub.rotation.z = Math.PI * 0.75 - stepP * Math.PI * 0.75; // stands upright
-      tub.rotation.y = Math.PI;
-
-      // Keep Lid next to the empty tub
-      lid.position.x = -2.2 - stepP * 0.4;
-      lid.position.y = 2.2 - stepP * 3.2; // drops to the floor Y = -1.0
-      lid.position.z = -0.5;
-
-      // Make all legumes rest inside the bowl
-      legumesRef.current.forEach((seed) => {
-        seed.mesh.visible = true;
-        seed.mesh.position.x = bowl.position.x + seed.randomBowlOffset.x;
-        seed.mesh.position.y = bowl.position.y + seed.randomBowlOffset.y;
-        seed.mesh.position.z = bowl.position.z + seed.randomBowlOffset.z;
-        // Legumes swell slightly as water is added (hydration)
-        const swellFactor = 1.0 + stepP * 0.45;
-        seed.mesh.scale.set(swellFactor, swellFactor, swellFactor);
-      });
-
-      // Slowly grow/swell the food inside bowl base representation
-      food.scale.set(stepP * 1.0, 1.0, stepP * 1.0);
-
-      // Water flow stream falling from above into the bowl
-      const time = performance.now() * 0.001; // clock replacement for useEffect
-      waterParticlesRef.current.forEach((w) => {
-        w.mesh.visible = true;
-        
-        // Loop water particle fall progress from 0 (top) to 1 (bowl base)
-        const waterP = (time * 1.8 + w.delay) % 1.0;
-        
-        w.mesh.position.y = THREE.MathUtils.lerp(2.5, bowl.position.y + 0.3, waterP);
-        w.mesh.position.x = bowl.position.x + Math.sin(time * 12 + w.wobbleOffset) * 0.12;
-        w.mesh.position.z = bowl.position.z + Math.cos(time * 12 + w.wobbleOffset) * 0.12;
-        
-        // Shrink particle size when it impacts the bowl
-        const scale = waterP > 0.85 ? (1.0 - waterP) * 6.0 : 1.0;
-        w.mesh.scale.set(scale, scale, scale);
-      });
-
-      // Turn off steam
-      if (steamParticlesRef.current) steamParticlesRef.current.visible = false;
-    }
-    // Step 3: Eat / Aroma (p from 0.70 to 1.0)
-    else {
-      const stepP = (p - 0.70) / 0.30; // Normalized progress of step 3 (0 to 1)
-
-      // Keep tub and lid stationary on the floor side
-      tub.position.set(-2.3, -1.0, -1.0);
-      tub.rotation.set(0, Math.PI, 0);
-      lid.position.set(-2.6, -1.7, -0.5);
-
-      // Keep hydrated seeds swollen inside the bowl
-      legumesRef.current.forEach((seed) => {
-        seed.mesh.visible = true;
-        seed.mesh.position.x = bowl.position.x + seed.randomBowlOffset.x;
-        seed.mesh.position.y = bowl.position.y + seed.randomBowlOffset.y;
-        seed.mesh.position.z = bowl.position.z + seed.randomBowlOffset.z;
-        seed.mesh.scale.set(1.45, 1.45, 1.45);
-      });
-
-      // Bowl fully hydrated
-      food.scale.set(1.0, 1.0, 1.0);
-
-      // Turn off water particles
-      waterParticlesRef.current.forEach(w => w.mesh.visible = false);
-
-      // Activate rising steam particles representing warm hydrated food!
-      if (steamParticlesRef.current) {
-        const steam = steamParticlesRef.current;
-        steam.visible = true;
-
-        const positions = steam.geometry.attributes.position.array;
-        const time = performance.now() * 0.001;
-        const pCount = steamPositionsLength(positions);
-
-        for (let i = 0; i < pCount; i++) {
-          // Animate particle age
-          const speed = 0.5 + (i % 5) * 0.1;
-          const particleP = (time * 0.45 + (i * 0.05)) % 1.0; // loops 0 to 1
-
-          // Rise from bowl up
-          positions[i * 3 + 1] = THREE.MathUtils.lerp(bowl.position.y + 0.3, 1.8, particleP);
-          // Spiral drift
-          positions[i * 3] = bowl.position.x + Math.sin(time + i * 0.8) * (0.1 + particleP * 0.6);
-          positions[i * 3 + 2] = bowl.position.z + Math.cos(time + i * 0.8) * (0.1 + particleP * 0.6);
-        }
-        steam.geometry.attributes.position.needsUpdate = true;
-      }
-    }
-  }, [scrollProgress]);
+  // Scroll-based layouts and positioning are now driven inside the requestAnimationFrame loop
 
   // Helper to extract points count from Float32Array length
   const steamPositionsLength = (arr) => {
