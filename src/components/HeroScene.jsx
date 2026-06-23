@@ -69,10 +69,17 @@ const HeroScene = ({ onOrderClick }) => {
 
       {/* Hero Centerpiece Content */}
       <main className="relative flex-grow flex flex-col justify-center items-center px-4 text-center z-20 max-w-4xl mx-auto">
-        <div className="mb-2">
+        <div className="mb-2 flex flex-col items-center gap-2">
           <span className="inline-block bg-[#2F6F4E]/80 border border-[#9ED660]/30 text-[#9ED660] text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest backdrop-blur-sm">
             100% Natural Sprouted Legumes
           </span>
+          <div className="flex flex-wrap justify-center gap-2.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-[#9ED660] opacity-90">
+            <span>No Flavours</span>
+            <span className="text-white/20">•</span>
+            <span>No Preservative</span>
+            <span className="text-white/20">•</span>
+            <span>No Colour</span>
+          </div>
         </div>
         
         <h1 
@@ -87,7 +94,8 @@ const HeroScene = ({ onOrderClick }) => {
           ref={subtitleRef}
           className="mt-6 text-base sm:text-xl text-[#F8F3E9]/80 max-w-2xl leading-relaxed"
         >
-          Ditch the protein shaker and processed bars. Dry Grab brings the power of raw, sprouted Indian superfoods (Chana, Mung, Matki) inside a shelf-stable, travel-ready tub. Ready in 3 minutes.
+          <strong className="text-white font-bold block mb-2 sm:inline sm:mr-1">Can you believe it?</strong> 
+          Sprouts can have a shelf life of 12 months & that too in a few minutes it's ready to eat! All you need to do is add boiling water to the sprouts & its ready.
         </p>
 
         <div ref={ctaRef} className="mt-8 flex flex-col sm:flex-row gap-4 pointer-events-auto">

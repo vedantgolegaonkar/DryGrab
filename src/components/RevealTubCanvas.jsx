@@ -31,6 +31,20 @@ const flavorConfigs = {
     bg: '#D2B48C', // Light Tan / Chawli color
     text: '#2A2118', // Espresso Ink
     accent: '#C9794B', // Toasted Clay
+  },
+  vaal: {
+    name: 'BITTER FIELD',
+    tagline: 'Protein & Fibre Storehouse',
+    bg: '#4A5D4E', // Muted Sage Green
+    text: '#F8F3E9', // Warm Cream
+    accent: '#C9794B', // Toasted Clay
+  },
+  mix: {
+    name: 'MIX BEANS',
+    tagline: 'All in One Pack',
+    bg: '#8B5A2B', // Toasted Mix Brown
+    text: '#9ED660', // Lime Pop
+    accent: '#2F6F4E', // Sprout Green
   }
 };
 

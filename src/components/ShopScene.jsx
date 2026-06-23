@@ -6,7 +6,7 @@ const ShopScene = ({ activeFlavor = 'mung', onWhatsAppRedirect }) => {
   const [gymPackMix, setGymPackMix] = useState('mixed'); // mixed, all-mung, all-matki, all-chana, all-chawli
 
   // WhatsApp numbers & messages config
-  const WHATSAPP_NUMBER = '919876543210'; // Aurangabad office placeholder
+  const WHATSAPP_NUMBER = '919307472945'; // Aurangabad office contact number from brochure
 
   const triggerOrder = (item) => {
     let message = '';
@@ -19,6 +19,8 @@ const ShopScene = ({ activeFlavor = 'mung', onWhatsAppRedirect }) => {
       if (gymPackMix === 'all-matki') mixText = 'All Matki Sprouts';
       if (gymPackMix === 'all-chana') mixText = 'All Kala Chana';
       if (gymPackMix === 'all-chawli') mixText = 'All Chawli Sprouts';
+      if (gymPackMix === 'all-vaal') mixText = 'All Bitter Field';
+      if (gymPackMix === 'all-mix') mixText = 'All Mix Beans';
       message = `Hey Dry Grab! I want to order the Gym Pack (6-tub bundle, ₹1250) with the following flavor selection: ${mixText}. Please confirm my order!`;
     } else if (item === 'subscription') {
       message = `Hey Dry Grab! I would like to subscribe to the Monthly Sprout Squad Plan (₹999/month). Let me know how to start!`;
@@ -79,8 +81,10 @@ const ShopScene = ({ activeFlavor = 'mung', onWhatsAppRedirect }) => {
                 >
                   <option value="mung" className="bg-[#16291E]">Sprouted Mung (Moong)</option>
                   <option value="matki" className="bg-[#16291E]">Sprouted Matki (Moth)</option>
-                  <option value="chana" className="bg-[#16291E]">Sprouted Kala Chana</option>
-                  <option value="chawli" className="bg-[#16291E]">Sprouted Chawli (Black-Eyed)</option>
+                  <option value="chana" className="bg-[#16291E]">Sprouted Black Pea (Chana)</option>
+                  <option value="chawli" className="bg-[#16291E]">Sprouted Black Eyed (Chawli)</option>
+                  <option value="vaal" className="bg-[#16291E]">Sprouted Bitter Field (Vaal)</option>
+                  <option value="mix" className="bg-[#16291E]">Sprouted Mix Beans (All-in-One)</option>
                 </select>
               </div>
 
@@ -140,6 +144,8 @@ const ShopScene = ({ activeFlavor = 'mung', onWhatsAppRedirect }) => {
                   <option value="all-matki" className="bg-[#16291E]">All Matki Pack</option>
                   <option value="all-chana" className="bg-[#16291E]">All Kala Chana Pack</option>
                   <option value="all-chawli" className="bg-[#16291E]">All Chawli Pack</option>
+                  <option value="all-vaal" className="bg-[#16291E]">All Bitter Field Pack</option>
+                  <option value="all-mix" className="bg-[#16291E]">All Mix Beans Pack</option>
                 </select>
               </div>
 

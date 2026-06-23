@@ -4,11 +4,11 @@ import { Volume2, X } from 'lucide-react';
 const SPROUT_FACTS = [
   "Sprouting boosts fiber content by up to 226%!",
   "Just add hot water, cover, and eat in 3 minutes!",
-  "Packed in a shelf-stable tub that stays fresh for 12 months.",
-  "Sprouted beans have lower anti-nutrients, making them super easy on your stomach!",
+  "Can you believe it? Sprouted tubs stay fresh for 12 months!",
+  "Check out our new Bitter Field (Kadwe Vaal) and Mix Beans tubs!",
   "No preservatives, no chemicals, no sugar. Just raw sprout power!",
   "Gym pack has over 120g of pure travel-ready plant protein!",
-  "Amit & Aradhya started Dry Grab to solve clean snacking for gym-goers!"
+  "Amit & Aradhya started Dry Grab in Aurangabad to solve clean snacking!"
 ];
 
 const SprigMascot = ({ currentSection = 'hero', activePersona = 'gym' }) => {
@@ -138,6 +138,17 @@ const SprigMascot = ({ currentSection = 'hero', activePersona = 'gym' }) => {
               </g>
             )}
 
+            {/* Superhero Cape behind body */}
+            {outfit === 'default' && (
+              <path 
+                d="M 32,55 L 8,105 L 50,95 L 92,105 L 68,55 Z" 
+                fill="#E9C46A" 
+                stroke="#2A2118" 
+                strokeWidth="3" 
+                strokeLinejoin="round"
+              />
+            )}
+
             {/* Sprig Body - Seed bean shape */}
             <path 
               d="M 50,40 C 25,40 25,100 50,100 C 75,100 75,40 50,40 Z" 
@@ -156,9 +167,31 @@ const SprigMascot = ({ currentSection = 'hero', activePersona = 'gym' }) => {
               <path d="M 63,22 C 70,22 68,13 63,22 C 60,28 58,28 63,22 Z" fill="#9ED660" stroke="#2A2118" strokeWidth="1.5" />
             </g>
 
+            {/* Superhero Mask (in front of face, behind eyes) */}
+            {outfit === 'default' && (
+              <path 
+                d="M 26,65 C 32,58 48,58 50,65 C 52,58 68,58 74,65 C 78,72 65,72 60,68 C 55,65 45,65 40,68 C 35,72 22,72 26,65 Z" 
+                fill="#16291E" 
+                stroke="#2A2118" 
+                strokeWidth="2.5" 
+              />
+            )}
+
             {/* Eyes */}
             <g id="eyes">
-              {pose === 'look' ? (
+              {outfit === 'default' ? (
+                <>
+                  {/* Large expressive white eyes */}
+                  <ellipse cx="38" cy="65" rx="7" ry="9" fill="#FFFFFF" stroke="#2A2118" strokeWidth="2.5" />
+                  <ellipse cx="62" cy="65" rx="7" ry="9" fill="#FFFFFF" stroke="#2A2118" strokeWidth="2.5" />
+                  {/* Black pupils */}
+                  <ellipse cx="38" cy="65" rx="3.5" ry="5.5" fill="#2A2118" />
+                  <ellipse cx="62" cy="65" rx="3.5" ry="5.5" fill="#2A2118" />
+                  {/* Eye Highlights */}
+                  <circle cx="36.5" cy="62" r="1.5" fill="#FFFFFF" />
+                  <circle cx="60.5" cy="62" r="1.5" fill="#FFFFFF" />
+                </>
+              ) : pose === 'look' ? (
                 /* Looking/suspicious side-eyes */
                 <>
                   <circle cx="42" cy="65" r="4.5" fill="#2A2118" />
@@ -198,7 +231,9 @@ const SprigMascot = ({ currentSection = 'hero', activePersona = 'gym' }) => {
             <circle cx="67" cy="73" r="3.5" fill="#C9794B" opacity="0.6" />
 
             {/* Left Arm */}
-            {pose === 'wave' ? (
+            {outfit === 'default' ? (
+              <path d="M 28,72 Q 10,78 18,85" fill="none" stroke="#2A2118" strokeWidth="3.5" strokeLinecap="round" />
+            ) : pose === 'wave' ? (
               /* Waving Arm (animated rotation) */
               <path 
                 d="M 28,72 Q 10,65 14,50" 
@@ -214,7 +249,9 @@ const SprigMascot = ({ currentSection = 'hero', activePersona = 'gym' }) => {
             )}
 
             {/* Right Arm */}
-            {pose === 'point' ? (
+            {outfit === 'default' ? (
+              <path d="M 72,72 Q 90,78 82,85" fill="none" stroke="#2A2118" strokeWidth="3.5" strokeLinecap="round" />
+            ) : pose === 'point' ? (
               /* Pointing Arm */
               <path d="M 72,72 Q 90,75 88,86" fill="none" stroke="#2A2118" strokeWidth="3.5" strokeLinecap="round" />
             ) : (
@@ -224,8 +261,18 @@ const SprigMascot = ({ currentSection = 'hero', activePersona = 'gym' }) => {
 
             {/* Feet */}
             <g id="feet">
-              <path d="M 42,99 C 42,106 32,106 35,99 Z" fill="#2A2118" />
-              <path d="M 58,99 C 58,106 68,106 65,99 Z" fill="#2A2118" />
+              {outfit === 'default' ? (
+                <>
+                  {/* Yellow superhero boots */}
+                  <path d="M 42,99 C 42,108 30,108 33,99 Z" fill="#E9C46A" stroke="#2A2118" strokeWidth="2" />
+                  <path d="M 58,99 C 58,108 70,108 67,99 Z" fill="#E9C46A" stroke="#2A2118" strokeWidth="2" />
+                </>
+              ) : (
+                <>
+                  <path d="M 42,99 C 42,106 32,106 35,99 Z" fill="#2A2118" />
+                  <path d="M 58,99 C 58,106 68,106 65,99 Z" fill="#2A2118" />
+                </>
+              )}
             </g>
 
             {/* Gym Headband (accessory) */}

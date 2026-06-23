@@ -3,9 +3,9 @@ import React from 'react';
 const flavorDetails = {
   mung: {
     id: 'mung',
-    name: 'Sprouted Mung',
+    name: 'Sprouted Mung Beans',
     localName: 'Moong',
-    description: 'The ultimate classic sprout. Crisp, slightly sweet, and loaded with essential amino acids. The perfect post-workout morning fuel.',
+    description: 'In Ayurveda, mung (moong) beans are considered the Queen of Pulses and a superfood because these tiny mighty mung beans are chock full of micronutrients. Of the legume family, it is the lightest and easiest to digest, the least gas forming and has a Sattvic effect on the mind. A complete protein with all your essential amino acids.',
     protein: '24.2g',
     fiber: '16.5g',
     iron: '6.7mg',
@@ -14,13 +14,13 @@ const flavorDetails = {
     borderColor: 'border-[#2F6F4E]',
     textColor: 'text-[#9ED660]',
     badgeBg: 'bg-[#2F6F4E]/20 text-[#2F6F4E]',
-    tagline: 'High Protein Hero'
+    tagline: 'Queen of Pulses'
   },
   matki: {
     id: 'matki',
-    name: 'Sprouted Matki',
-    localName: 'Moth Beans',
-    description: 'An ancient Marathwada favorite. Rich, earthy, and highly textured. Extremely rich in calcium, iron, and slow-burning complex carbs.',
+    name: 'Sprouted Moth Beans',
+    localName: 'Matki',
+    description: 'Matki sprouts abound in fiber and thus form an ideal choice for weight watchers, diabetes, heart disease etc. The process of sprouting increases the protein count of matki by 30%. This protein boost makes it a perfect addition to an athletic diet. Matki sprouts boost blood circulation too as they are brimming with iron. Matki sprouts are also a good way to manage healthy cholesterol in the body.',
     protein: '22.8g',
     fiber: '15.2g',
     iron: '7.8mg',
@@ -29,13 +29,13 @@ const flavorDetails = {
     borderColor: 'border-[#C9794B]',
     textColor: 'text-[#F8F3E9]',
     badgeBg: 'bg-[#C9794B]/20 text-[#C9794B]',
-    tagline: 'Iron Powerhouse'
+    tagline: 'Athletic Fiber Boost'
   },
   chana: {
     id: 'chana',
-    name: 'Sprouted Kala Chana',
-    localName: 'Brown Chickpeas',
-    description: 'Robust, crunchy, and packed with traditional power. Double the fiber of regular chickpeas. Built for gym-goers wanting maximum satiety.',
+    name: 'Sprouted Black Pea',
+    localName: 'Kala Chana / Vatana',
+    description: 'One way of supplying the body with a high level of nutrition is by including sprouts in the daily diet. So, if evening is the time when you feel an intense craving to snack, we have the perfect healthy, nutrient-packed snack for you: CHANA SPROUTS.',
     protein: '20.1g',
     fiber: '18.6g',
     iron: '5.5mg',
@@ -44,13 +44,13 @@ const flavorDetails = {
     borderColor: 'border-[#3D2F28]',
     textColor: 'text-[#9ED660]',
     badgeBg: 'bg-[#3D2F28]/20 text-[#F8F3E9]',
-    tagline: 'Dietary Fiber King'
+    tagline: 'Nutritional Crunch'
   },
   chawli: {
     id: 'chawli',
-    name: 'Sprouted Chawli',
-    localName: 'Black-Eyed Peas',
-    description: 'Light, delicate, and easy to digest. Possesses a creamy texture that pairs beautifully with tangy chaat masalas. Travel-ready digestion.',
+    name: 'Sprouted Black Eyed Beans',
+    localName: 'Chawli / Cowpeas',
+    description: 'Cowpeas/chawli are packed with essential nutrients which offer a wallop of health benefits such as support weight loss, promotes digestive health, regulate diabetes and optimise cardiac wellness. They are also versatile, flavourful and tasty that can be easily added into a spectrum of dishes as part of a wholesome diet.',
     protein: '21.5g',
     fiber: '14.0g',
     iron: '6.1mg',
@@ -59,7 +59,37 @@ const flavorDetails = {
     borderColor: 'border-[#D2B48C]',
     textColor: 'text-[#2A2118]',
     badgeBg: 'bg-[#D2B48C]/30 text-[#2A2118]',
-    tagline: 'Light & Energizing'
+    tagline: 'Digestive Wellness'
+  },
+  vaal: {
+    id: 'vaal',
+    name: 'Sprouted Bitter Field',
+    localName: 'Kadwe Vaal',
+    description: 'Vaal is a storehouse of protein and fibre. The duo of these nutrients makes you feel full for longer, helping cut unnecessary food intake and weight gain. The fibre also aids digestion and maintains digestive health. Beans also appear to have a blood sugar normalizing effect, and the zinc acts as an antioxidant that protects against cancer and fatigue. Rich in vitamin B1, they support nerve functioning.',
+    protein: '22.4g',
+    fiber: '17.2g',
+    iron: '7.1mg',
+    colorClass: 'from-[#4A5D4E] to-[#2E3C31]',
+    glowColor: 'rgba(74,93,78,0.3)',
+    borderColor: 'border-[#4A5D4E]',
+    textColor: 'text-[#F8F3E9]',
+    badgeBg: 'bg-[#4A5D4E]/20 text-[#4A5D4E]',
+    tagline: 'Antioxidant & Nerve Support'
+  },
+  mix: {
+    id: 'mix',
+    name: 'Sprouted Mix Beans',
+    localName: 'All in One Pack',
+    description: 'An ultimate blend of Mung, Matki, Kala Chana, Chawli, and Vaal in a single convenient pack. Get all the unique nutritional benefits, fibers, and plant-based protein boosters of all five sprouted legumes mixed together in one premium snack.',
+    protein: '23.1g',
+    fiber: '16.8g',
+    iron: '6.9mg',
+    colorClass: 'from-[#8B5A2B] to-[#5C3A1A]',
+    glowColor: 'rgba(139,90,43,0.3)',
+    borderColor: 'border-[#8B5A2B]',
+    textColor: 'text-[#9ED660]',
+    badgeBg: 'bg-[#8B5A2B]/20 text-[#8B5A2B]',
+    tagline: 'The Complete Mix'
   }
 };
 
@@ -92,8 +122,8 @@ const FlavorsScene = ({ activeFlavor = 'mung', setActiveFlavor }) => {
           </p>
         </div>
 
-        {/* 4 Flavors Cards Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12">
+        {/* 6 Flavors Cards Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6 mb-12">
           {Object.values(flavorDetails).map((flavor) => {
             const isSelected = flavor.id === activeFlavor;
             return (
@@ -110,10 +140,10 @@ const FlavorsScene = ({ activeFlavor = 'mung', setActiveFlavor }) => {
                   <span className={`text-[10px] md:text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${flavor.badgeBg}`}>
                     {flavor.tagline}
                   </span>
-                  <h3 className="font-display font-extrabold text-lg md:text-2xl mt-3 text-[#2A2118] leading-tight">
+                  <h3 className="font-display font-extrabold text-sm md:text-base lg:text-lg mt-3 text-[#2A2118] leading-tight">
                     {flavor.name}
                   </h3>
-                  <p className="text-xs text-[#2A2118]/60 italic font-semibold">
+                  <p className="text-[10px] text-[#2A2118]/60 italic font-semibold">
                     ({flavor.localName})
                   </p>
                 </div>
@@ -122,7 +152,7 @@ const FlavorsScene = ({ activeFlavor = 'mung', setActiveFlavor }) => {
                   <span className="text-[10px] md:text-xs font-bold text-[#2A2118]/70">
                     Protein: {flavor.protein}
                   </span>
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: flavor.id === 'mung' ? '#2F6F4E' : flavor.id === 'matki' ? '#C9794B' : flavor.id === 'chana' ? '#3D2F28' : '#D2B48C' }}></span>
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: flavor.id === 'mung' ? '#2F6F4E' : flavor.id === 'matki' ? '#C9794B' : flavor.id === 'chana' ? '#3D2F28' : flavor.id === 'chawli' ? '#D2B48C' : flavor.id === 'vaal' ? '#4A5D4E' : '#8B5A2B' }}></span>
                 </div>
               </button>
             );

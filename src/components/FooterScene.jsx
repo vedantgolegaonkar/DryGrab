@@ -79,7 +79,7 @@ const FooterScene = () => {
             </div>
             
             <p className="text-xs sm:text-sm text-white/60 leading-relaxed max-w-sm">
-              We started Dry Grab with one mission: to make raw, sprouted legumes shelf-stable, travel-ready, and instant, without sacrificing nutritional purity. Just add hot water.
+              Manufactured under the registered brand name of DRYGRAB by <strong>DivIndia Global Exports LLP</strong>. We make raw, sprouted legumes shelf-stable, travel-ready, and instant, with zero flavours, preservatives, or colors.
             </p>
 
             <div className="flex gap-4 pt-2">
@@ -118,18 +118,20 @@ const FooterScene = () => {
 
           {/* Contact Details */}
           <div className="space-y-4">
-            <h4 className="font-display font-bold text-xs uppercase tracking-widest text-white/80">
-              Headquarters
+            <h4 className="font-display font-bold text-xs uppercase tracking-widest text-[#9ED660]">
+              Corporate Office
             </h4>
-            <p className="text-xs text-white/60 leading-relaxed">
-              **Herambh Food Labs** <br />
-              Plot 45, MIDC Area, <br />
+            <p className="text-xs text-white/70 leading-relaxed">
+              <strong>DivIndia Global Exports LLP</strong> <br />
+              Office No.: 408, Elite Square,<br />
+              Gat No 57, Beed Bypass Rd,<br />
               Aurangabad, Maharashtra - 431005 <br />
-              India
+              LLPIN: ABA-7075
             </p>
-            <p className="text-xs text-white/50">
-              Email: hello@drygrab.com <br />
-              FSSAI Lic No: 11523999000124
+            <p className="text-xs text-white/60">
+              Email: drygrabdivindia@gmail.com <br />
+              Phone: +91 9307472945 <br />
+              FSSAI Lic No: 11522999000347
             </p>
           </div>
 
