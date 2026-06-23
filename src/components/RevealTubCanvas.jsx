@@ -48,6 +48,7 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
   const textureCanvasRef = useRef(null);
   const waterStreamRef = useRef(null);
   const waterCurveRef = useRef(null);
+  const waterTextureRef = useRef(null);
 
   // Lists of animated objects
   const legumesRef = useRef([]);
@@ -283,12 +284,65 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
       const waterCurve = new THREE.CatmullRomCurve3(waterPoints);
       waterCurveRef.current = waterCurve;
 
+      // Create a procedural water flow texture with vertical wavy bands
+      const createWaterTexture = () => {
+        const c = document.createElement('canvas');
+        c.width = 128;
+        c.height = 256;
+        const ctx = c.getContext('2d');
+        
+        // Base semi-translucent light blue gradient
+        const baseGrad = ctx.createLinearGradient(0, 0, 128, 0);
+        baseGrad.addColorStop(0, '#2d7ea8');
+        baseGrad.addColorStop(0.35, '#5cb2db');
+        baseGrad.addColorStop(0.65, '#aadaff');
+        baseGrad.addColorStop(1, '#2d7ea8');
+        ctx.fillStyle = baseGrad;
+        ctx.fillRect(0, 0, 128, 256);
+
+        // Highlight wavy current bands to mimic flowing water
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.lineCap = 'round';
+
+        // Wave 1
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(20, -50);
+        ctx.bezierCurveTo(45, 60, 15, 170, 30, 310);
+        ctx.stroke();
+
+        // Wave 2
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(85, -50);
+        ctx.bezierCurveTo(60, 60, 105, 170, 75, 310);
+        ctx.stroke();
+
+        // Wave 3 (thin foam highlight)
+        ctx.strokeStyle = 'rgba(240, 250, 255, 0.9)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(115, -50);
+        ctx.bezierCurveTo(125, 90, 55, 190, 95, 310);
+        ctx.stroke();
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(1, 4); // Repeat texture along the tube length
+        return tex;
+      };
+
+      const waterTex = createWaterTexture();
+      waterTextureRef.current = waterTex;
+
       const tubeGeo = new THREE.TubeGeometry(waterCurve, 12, 0.08, 8, false);
       const tubeMat = new THREE.MeshStandardMaterial({
-        color: 0x93cbe8, // light water blue
+        map: waterTex,
         transparent: true,
-        opacity: 0.65,
-        roughness: 0.05,
+        opacity: 0.8,
+        roughness: 0.1,
         metalness: 0.1,
         depthWrite: false
       });
@@ -318,11 +372,13 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
         mesh.visible = false;
         waterGroup.add(mesh);
 
+        const angle = Math.random() * Math.PI * 2;
+        const spread = 0.5 + Math.random() * 0.9;
         waterParticlesRef.current.push({
           mesh,
-          vx: (Math.random() - 0.5) * 1.4,
-          vy: 1.2 + Math.random() * 2.5,
-          vz: (Math.random() - 0.5) * 1.4,
+          vx: Math.cos(angle) * spread,
+          vy: 1.5 + Math.random() * 2.5,
+          vz: Math.sin(angle) * spread,
           life: Math.random(),
           speed: 1.0 + Math.random() * 1.5
         });
@@ -493,33 +549,93 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
 
           food.scale.set(stepP * 1.0, 1.0, stepP * 1.0);
 
-          // Animate continuous wobbly water stream
+          // Dynamic water stream growth and wobble based on stepP (from 0 to 1)
+          let startT = 0;
+          let endT = 0;
+
+          if (stepP < 0.3) {
+            startT = 0;
+            endT = stepP / 0.3; // growing slowly down to the bowl
+          } else if (stepP < 0.85) {
+            startT = 0;
+            endT = 1.0; // fully flowing
+          } else {
+            startT = (stepP - 0.85) / 0.15; // emptying from top to bottom
+            endT = 1.0;
+          }
+
+          // Clamp values
+          startT = Math.max(0, Math.min(1, startT));
+          endT = Math.max(0, Math.min(1, endT));
+
+          const streamLength = endT - startT;
+
           if (waterStreamRef.current) {
-            waterStreamRef.current.visible = true;
+            if (streamLength < 0.05) {
+              waterStreamRef.current.visible = false;
+            } else {
+              waterStreamRef.current.visible = true;
 
-            // Wobble the curve midpoint over time to simulate moving water current
-            waterCurveRef.current.points[1].x = 0.6 + Math.sin(time * 15) * 0.04;
-            waterCurveRef.current.points[1].z = -0.2 + Math.cos(time * 15) * 0.04;
+              // Generate evaluated curve points for the current active segment
+              const points = [];
+              const segments = 16;
+              const fullCurve = waterCurveRef.current;
+              for (let i = 0; i <= segments; i++) {
+                const factor = i / segments;
+                const t = startT + factor * streamLength;
+                const pt = fullCurve.getPoint(t);
 
-            // Rebuild geometry to apply curve changes
-            const oldGeo = waterStreamRef.current.geometry;
-            waterStreamRef.current.geometry = new THREE.TubeGeometry(waterCurveRef.current, 12, 0.08, 8, false);
-            oldGeo.dispose();
+                // Add traveling sine wave wobble for organic liquid flow motion
+                // Keep the active boundary ends anchored stable:
+                // Only wobble if it's not the source (startT == 0 & factor == 0)
+                // and not the bowl (endT == 1 & factor == 1)
+                const isAtSource = (startT === 0 && factor === 0);
+                const isAtBowl = (endT === 1 && factor === 1);
+                if (!isAtSource && !isAtBowl) {
+                  const waveOffset = Math.sin(time * 18 - (t * 8)) * 0.05;
+                  const waveOffset2 = Math.cos(time * 14 - (t * 6)) * 0.05;
+                  pt.x += waveOffset;
+                  pt.z += waveOffset2;
+                }
+                points.push(pt);
+              }
+
+              // Create temporary segment curve and rebuild tube geometry
+              const segmentCurve = new THREE.CatmullRomCurve3(points);
+              const oldGeo = waterStreamRef.current.geometry;
+              const radius = 0.08 * Math.min(1.0, streamLength * 2.0);
+              waterStreamRef.current.geometry = new THREE.TubeGeometry(segmentCurve, segments, radius, 8, false);
+              oldGeo.dispose();
+
+              // Shift texture coordinates to animate flowing current
+              if (waterTextureRef.current) {
+                waterTextureRef.current.offset.y = -time * 2.2;
+              }
+            }
           }
 
           // Splash droplets physics
           const dt = 0.016; // approximate delta time per frame
+          const activeSplashes = (endT === 1.0 && startT < 0.95);
+
           waterParticlesRef.current.forEach((w) => {
+            if (!activeSplashes) {
+              w.mesh.visible = false;
+              return;
+            }
+
             w.mesh.visible = true;
 
             // Increment life
             w.life += dt * w.speed;
             if (w.life > 1.0) {
               w.life = 0;
-              w.vx = (Math.random() - 0.5) * 1.4;
-              w.vy = 1.2 + Math.random() * 2.5;
-              w.vz = (Math.random() - 0.5) * 1.4;
-              w.mesh.position.set(0, bowl.position.y + 0.45, 0); // start at landing point on top of legumes
+              const angle = Math.random() * Math.PI * 2;
+              const spread = 0.5 + Math.random() * 0.9;
+              w.vx = Math.cos(angle) * spread;
+              w.vz = Math.sin(angle) * spread;
+              w.vy = 1.5 + Math.random() * 2.5;
+              w.mesh.position.set(0, bowl.position.y + 0.45, 0); // start at landing point
             }
 
             const t = w.life;
@@ -604,6 +720,7 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
     return () => {
       if (animId) cancelAnimationFrame(animId);
       if (handleResize) window.removeEventListener('resize', handleResize);
+      if (waterTextureRef.current) waterTextureRef.current.dispose();
       if (rendererRef.current) {
         if (containerRef.current && rendererRef.current.domElement && containerRef.current.contains(rendererRef.current.domElement)) {
           containerRef.current.removeChild(rendererRef.current.domElement);
