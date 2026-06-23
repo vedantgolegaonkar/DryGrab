@@ -46,6 +46,8 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
   const foodMeshRef = useRef(null);
   const textureRef = useRef(null);
   const textureCanvasRef = useRef(null);
+  const waterStreamRef = useRef(null);
+  const waterCurveRef = useRef(null);
 
   // Lists of animated objects
   const legumesRef = useRef([]);
@@ -271,17 +273,43 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
         });
       }
 
-      // 5. Water Particles (For Water Pouring Animation)
+      // 5. Water Stream & Splash Particles (For Water Pouring Animation)
+      // Create continuous wobbly water stream
+      const waterPoints = [
+        new THREE.Vector3(1.2, 2.8, -0.4),
+        new THREE.Vector3(0.6, 0.6, -0.2),
+        new THREE.Vector3(0.0, -1.35, 0.0)
+      ];
+      const waterCurve = new THREE.CatmullRomCurve3(waterPoints);
+      waterCurveRef.current = waterCurve;
+
+      const tubeGeo = new THREE.TubeGeometry(waterCurve, 12, 0.08, 8, false);
+      const tubeMat = new THREE.MeshStandardMaterial({
+        color: 0x93cbe8, // light water blue
+        transparent: true,
+        opacity: 0.65,
+        roughness: 0.05,
+        metalness: 0.1,
+        depthWrite: false
+      });
+      const waterStreamMesh = new THREE.Mesh(tubeGeo, tubeMat);
+      waterStreamMesh.visible = false;
+      scene.add(waterStreamMesh);
+      waterStreamRef.current = waterStreamMesh;
+
+      // Create splash group
       const waterGroup = new THREE.Group();
       scene.add(waterGroup);
 
-      const waterCount = 30;
-      const waterGeo = new THREE.SphereGeometry(0.05, 6, 6);
-      const waterMat = new THREE.MeshBasicMaterial({
-        color: 0x5dade2,
+      const waterCount = 35;
+      const waterGeo = new THREE.SphereGeometry(0.045, 6, 6);
+      const waterMat = new THREE.MeshStandardMaterial({
+        color: 0xaadaff, // bright water color
+        roughness: 0.1,
+        metalness: 0.1,
         transparent: true,
-        opacity: 0.7,
-        blending: THREE.AdditiveBlending
+        opacity: 0.8,
+        depthWrite: false
       });
 
       waterParticlesRef.current = [];
@@ -292,8 +320,11 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
 
         waterParticlesRef.current.push({
           mesh,
-          delay: i * 0.03, // Staggered drop delays
-          wobbleOffset: Math.random() * Math.PI * 2
+          vx: (Math.random() - 0.5) * 1.4,
+          vy: 1.2 + Math.random() * 2.5,
+          vz: (Math.random() - 0.5) * 1.4,
+          life: Math.random(),
+          speed: 1.0 + Math.random() * 1.5
         });
       }
 
@@ -429,6 +460,7 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
           });
 
           // Turn off water and steam
+          if (waterStreamRef.current) waterStreamRef.current.visible = false;
           waterParticlesRef.current.forEach(w => w.mesh.visible = false);
           if (steamParticlesRef.current) steamParticlesRef.current.visible = false;
         } 
@@ -461,17 +493,47 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
 
           food.scale.set(stepP * 1.0, 1.0, stepP * 1.0);
 
-          // Water flow
+          // Animate continuous wobbly water stream
+          if (waterStreamRef.current) {
+            waterStreamRef.current.visible = true;
+
+            // Wobble the curve midpoint over time to simulate moving water current
+            waterCurveRef.current.points[1].x = 0.6 + Math.sin(time * 15) * 0.04;
+            waterCurveRef.current.points[1].z = -0.2 + Math.cos(time * 15) * 0.04;
+
+            // Rebuild geometry to apply curve changes
+            const oldGeo = waterStreamRef.current.geometry;
+            waterStreamRef.current.geometry = new THREE.TubeGeometry(waterCurveRef.current, 12, 0.08, 8, false);
+            oldGeo.dispose();
+          }
+
+          // Splash droplets physics
+          const dt = 0.016; // approximate delta time per frame
           waterParticlesRef.current.forEach((w) => {
             w.mesh.visible = true;
-            const waterP = (time * 1.8 + w.delay) % 1.0;
-            
-            w.mesh.position.y = THREE.MathUtils.lerp(2.5, bowl.position.y + 0.3, waterP);
-            w.mesh.position.x = bowl.position.x + Math.sin(time * 12 + w.wobbleOffset) * 0.12;
-            w.mesh.position.z = bowl.position.z + Math.cos(time * 12 + w.wobbleOffset) * 0.12;
-            
-            const scale = waterP > 0.85 ? (1.0 - waterP) * 6.0 : 1.0;
+
+            // Increment life
+            w.life += dt * w.speed;
+            if (w.life > 1.0) {
+              w.life = 0;
+              w.vx = (Math.random() - 0.5) * 1.4;
+              w.vy = 1.2 + Math.random() * 2.5;
+              w.vz = (Math.random() - 0.5) * 1.4;
+              w.mesh.position.set(0, bowl.position.y + 0.45, 0); // start at landing point on top of legumes
+            }
+
+            const t = w.life;
+            // X & Z linear dispersion
+            w.mesh.position.x = t * w.vx;
+            w.mesh.position.z = t * w.vz;
+            // Y projectile motion with gravity
+            const gravity = 5.0;
+            w.mesh.position.y = (bowl.position.y + 0.45) + (w.vy * t) - (0.5 * gravity * t * t);
+
+            // Scale and opacity fade over life
+            const scale = Math.max(0.001, 1.0 - t);
             w.mesh.scale.set(scale, scale, scale);
+            w.mesh.material.opacity = (1.0 - t) * 0.8;
           });
 
           if (steamParticlesRef.current) steamParticlesRef.current.visible = false;
@@ -495,6 +557,7 @@ const RevealTubCanvas = ({ scrollProgress = 0, activeFlavor = 'mung' }) => {
 
           food.scale.set(1.0, 1.0, 1.0);
 
+          if (waterStreamRef.current) waterStreamRef.current.visible = false;
           waterParticlesRef.current.forEach(w => w.mesh.visible = false);
 
           if (steamParticlesRef.current) {
